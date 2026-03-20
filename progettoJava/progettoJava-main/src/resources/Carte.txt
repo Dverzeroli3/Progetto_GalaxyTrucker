@@ -1,0 +1,12 @@
+# qualsiasi riga che comincia con "#" viene ignorata
+# Il formato è: <NomeEsattoClasse> <quantita>
+
+CartaNaveAbbandonata 2
+CartaStazioneAbbandonata 2
+CartaZonaDiGuerra 1
+CartaMeteoriti 3
+CartaSpazioAperto 4
+CartaPianeta 4
+CartaContrabbandieri 1
+CartaPolvereStellare 1
+

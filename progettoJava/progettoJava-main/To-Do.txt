@@ -1,0 +1,172 @@
+Consigli della lezione 30/04/2025
+(!) All'interno del progetto viene valorizzato se vengono gestite le eccezioni (try-cacth, o throw). Sia che siano controllate o non controllate. 
+(!) All'interno del progetto vengono valorizzate le JavaDoc (documentazione che sopiega cosa fa una determinata classe/innterfaccia)
+(!) Usare le collezioni nel posto giusto dà punti extra - elementi unici --> set, altrimenti altro.
+(!) Usare LogForJ potrebbe fornire un punto bonus
+(!) Puoi dare un'ID univoco a ogni oggetto per facilitarne la gestione (anche con la strategia del costruttore metodo statico).
+(!) inserire il blocco finally per chiudere tutti i file e le risorse prima di chiudere il progaramma.
+
+----
+
+Regola d’oro “esame-friendly”: Una responsabilità per classe, pochi metodi pubblici (< 6).
+
+!!! Per sapere come eseguire il programma, immagina a metà partità cosa servirebbe per salvare lo stato.
+!!! Ogni cosa deve gestire i suoi stati (per rompere il componente, ad esempio, uso un metodo della nave (tabellone nave).
+!!! Quando modellizziamo il gioco, non è necessario che vi siano le due facce di una carta. è fatto nella realtà per risparmiare spazio è fatto così. 
+--> non si modellizzano cose grafiche
+!!! La logica del gioco (controllo) và nella classe gioco. Nella parte di controllo và nella gestione dei turni - model view controller - (GameCLI).
+!!! File da cui caticare le informazioni delle carte (non una cattiva idea). --> 100 righe (una per ogni carta), da cui carico le info specifiche della carta (quanti meteoriti, disposizioe eccc....) 
+! le carte possono essere modellizzate partendo da una classe astratta carta, e a seguire una serie di classi che estendono l'astratto per i diversi tipi di carte
+! Per fare il mazzo posso usare una lista (in modo da poter mischiare) oppure/anche possiamo usare i set.
+! le carte possono avere un metodo esegui che poi punta ad altri oggetti e chiama altri metodi (come board.getLeader) per le loro funzionalità.
+! Possiamo gestire le celle con puntatori alle altre 4 celle limitrofe (set) - o come una matrice(?)
+! Per l'interfaccia grafica è possibile usare JavaFX o 
+
+
+
+POSSIBILE STRUTTURA BASE:
+            +------------------+       1    +--------------+
+            |      Gioco       |------------|  Giocatore   |
+            +------------------+            +--------------+
+            | fase            |                 | nave : Nave
+            | mazzoCarte      |                 | crediti
+            | tabellone       |                 +--------------+
+            | currentPlayer   |                         1
+            +-----------------+                         |
+            | +start()        |                         v
+            | +doAction(cmd)  |                    +-----------+
+            |                 |                    |   Nave    |
+            +-----------------+                    +-----------+
+                      ^                            | griglia   |
+      comandi         |                            | leader?   |
+ (stringa → enum)     |                            +-----------+
+                      |                            | piazza()  |
+                      |                            | stats()   |
+               +-------------+                    +-----------+
+               | GiocoCLI    |
+               +-------------+         1           +-------------+
+               | scanner     |-------------------->|  GrigliaNave|
+               | +main()     |                     +-------------+
+               | +loopIO()   |                     | 10×10 Tessera
+               +-------------+                     +-------------+
+
+               +---------------+              +------------------+
+               |    Tessera    |<|------------| CartaAvventura   |
+               +---------------+  abstract    +------------------+
+               | tipo          |              | dati vari        |
+               | connettori    |              | +applica(Gioco)  |
+               +---------------+              +------------------+
+
+      Enum  TipoTessera | Direzione   ---> MOTORE, CANNONE, …
+
+Fasi di Gioco e Componenti di Codice  (TEST):
+
+COSE DA COSTRUIRE: 
+
+FASE 1 - Costruzione Della Nave
+
+- Classe GiocoCLI (il nostro vecchio CreaGioco pensato meglio) Farebbe da main, 
+crea l'oggetto gioco, e permette l'utilizzo di System.out e Scanner separatamente.
+  è cioè l'unico oggetto adibito a interfacciarsi con il terminale, e funge da "motore" del gioco
+--- Cosa fà poi?
+! Legge i comandi (una riga di testo) -->	piazza 3 5 CABINA 90, passa, salva part.bin
+!! Li traduce in un oggetto/enum Comando --> new Comando.Tipo.PIAZZA(3,5,CABINA,90)
+!!! Passa il comando a Gioco.doAction(cmd) --> separa I/O da logica
+!!!! Stampa il risultato (ritorno di doAction)	"Posizionamento riuscito"
+--- Questo perchè, a quanto pare, separare queste due parti è molto fondamentale (oggi menghi ha confermato).
+(Soprattutto per poter testare il gioco)
+
+- Classe gioco: gestione del gioco (unica richiamata dal main)
+  - Contiene il main loop e passa il turno da una fase all’altra: Costruzione → Volo → Fine.
+  - crea le tessere
+- Classe giocatore: inserisci i dati dei giocatori e associ la relativa nave 
+- Classe nave (tabellone in cui costruiscei la nave): costruzione della nave
+  - Interazioni strette con la classe tessera --> usa gli oggetti creati da gioco
+  - Le cellette non scelte nella costruzione vengono ributtate dentro il mazzo 
+    (appunto perchè è randomico) e viene rimischiato il mazzo ogni volta
+**La nave PUò contenere cellette vuote e non poste**
+--- linee guida sulla costuzione della classe nave:
+!) ogni nave include la classe matrice (la classe matrice è una quadrata con null 
+dove non ci sono cellette disponibili). Ha un nucleo in centro sempre nella stessa 
+posizione (con tutti connettori universali) e un dato colore (dell’utente, classe enum colore).
+--- gestione del pescaggio a turni: 
+a ogni giocatore viene fornita una tessera 
+randomica e questo decide se tenerla o no (stampando la sua nave e il componente). 
+In caso lui scelga di tenerlo si sceglie poi l’orientazione e la posizione, con relativi 
+controlli (ricordare la cella vuota dietro o davanti i cannoni/motori. 
+Si mostra infine il risultato finale.
+!!) in futuro potremmo implementare che c’è un cliccare di lettere, 
+e chi lo fà di più vince la celletta.
+--- Consigli per la gestione dell'effettiva costruzione della nave: 
+!) l’orientamento dei motori è fissato verso il basso
+!) gli omnini e le batterie sono attributi della nave.
+la tessera cabina ha già il suo attributo, come la batteria (vengono quindi ereditati da queste).
+--- Per i controlli:
+1) non controllate --> costruttore che non accetta cose null o altri errori tipo un file non leggibile (tutto ciò che rompe il programma).
+2) controllate --> gestire gli errori di gioco (al posto di usare i boolean tipo if o do-while--> non confondere la logica di gioco con la gestione delle eccezioni)
+Si utilizzano quindi le eccezioni nel caso di re-inserimenti, e tutti questi vengono effettuati nella classe di imput-outpuit (GameCLI)
+E anche per errori standard (se piazzo male il cannone ecc..) va svolta la logica delle eccezioni.
+---
+
+- Funzione di stampa della nave. per mostrare i componenti con i relativi agganci, 
+aggiungiamo un “intorno” di cellette che mostri dove sono i connettori 
+(anche nella stampa della nave finale)
+- Classe Tessera astratta: contenente le basi di ogni modulo che compone la nave
+  - Con altre classi per ogni tipo di componenti che la estendono
+    - Classe enum per i 3 tipi + null di connettori
+
+!!) chi finisce per primo la costruzione della nave diventa il leader, e gli altri a seguire 
+
+FASE 2 - gioco
+
+- Classe dado (indipendente)
+- Classe Tabellone
+  - Gestione del tabellone come un vettore statico, dobbiamo capire 
+    come unire la punta e la coda (possibile shift) per gestire il caso di posizioni 
+    minori di quella iniziale. Il contenuto può essere una semplice "reppresentanza" - "placeholder"
+    del giocatore (nel suo id e/o colore) dato che il tabellone non ci farebbe nulla 
+    con l'intero oggetto nave.
+- Gestione del mazzo
+  - Classe carta astratta
+    - Classi specifiche per ogni tipo di carta (estendono carta)
+      - Per tutti gli effetti in comune tra diversi tipi di carte, meglio creare un'interfaccia
+        che implementi i metodi comuni, in modo da risparmiare codice
+!) Il mazzo va mischiato ogni turno
+--- Idea, probabilmente è meglio usare una list:
+List<CartaAvventura> mazzo = new ArrayList<>();
+Collections.shuffle(mazzo);
+CartaAvventura carta = mazzo.remove(0);
+carta.applica(this);           // `this` = Gioco
+L’astrazione è sufficiente per l’esame; niente Observable o EventBus.
+---
+!) le varie carte sono divise in 8 categorie (carte avventura) di base, 
+nella funzione che crea le carte poi, andranno inizializzarti più oggetti 
+della stessa categoria con valori diversi (costruttori parametrizzati e/o con parametri diversi).
+
+
+CLI o Gioco
+	- Metodo che consente pescare la tessera
+	  ogni volta che si pesca una tessere si stampa la nave del giocatore e la tessera
+	  si prosegue chiedendo se il giocatore vuole tenere o meno la tessera,
+	  se no, si passa al prossimo giocatore,
+	  se si, si chiede dove vuole posizionare la tessera e con che rotazione, si fanno i controlli del caso
+	  e se è tutto ok 
+	  
+	- Metodo Nave terminata
+
+Fase 0: Creazione Giocatori ()
+Fase 1: Costruzione Nave
+	- Metodo per rimozione tessera (fatto) e controllo integrità nave (da fare)
+	- Prendere le tessere da file (Metodo già esistente)
+	- capire come randomizzare l'elenco delle tessere
+	- Metodo controllo connettori esposti su un lato a scelta della nave
+	
+	
+	  
+Fase 2: 
+	- Stampa grafica del tabellone
+	
+Fase 3: 
+	- Metodo controllo vincitore
+	
+	- 
